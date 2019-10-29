@@ -19,7 +19,7 @@
 ******************************************************************************;
 
 * define git_repo_dir macro variable;
-%let git_repo_dir = /folders/myshortcuts/SAS_GWU_examples;
+%let git_repo_dir = /home/jphall0/SAS_Workshop;
 
 * set directory separator;
 %let dsep = /; /* comment line for windows (but not for unversity edition) */
@@ -90,52 +90,29 @@ libname x;
 *** JSON *********************************************************************;
 
 * one way to process semi-structured JSON data using SAS;
-* is the data step with the truncover and scanover options;
+* is the newish JSON library engine;
 
 * create a file reference to the example.json file;
 filename json "&git_repo_dir.&dsep.example.json";
 
-* use a data step to ingest the JSON file;
-* read desired JSON elements as character strings;
-* create scratch2 set;
-data scratch2;
+* create a library reference to the file reference;
+libname j JSON fileref=json;
 
-	/* infile statement reads from an external file */
-	/* infile and data step provide A LOT of flexibility */
-	/* lrecl defines the maximum length of a single record in an external file */
-	/* truncover allows records to be shorter than expected */
-	/* scanover scans for the @'character-string' expression */
-	/* input statement creates new SAS variables */
-
-	infile json lrecl = 1000 truncover scanover;
-	input @'"variable1": ' c_variable1 $255.
-		@'"variable2": ' c_variable2 $255.
-		@'"variable3": "' c_variable3 $255.;
-run;
-
-* use data step functions and SAS formats;
+* use data step and SAS formats;
 * to tidy up JSON input;
 * recreate scratch2 set;
 data scratch2;
-	length variable1 variable2 8 variable3 $6;
-	infile json lrecl=32767 truncover scanover;
-	input @'"variable1": ' c_variable1 $255.
-		@'"variable2": ' c_variable2 $255.
-		@'"variable3": "' c_variable3 $255.;
-	/* substr() returns a segment of a string */
-	/* SAS strings are indexed from 1 */
-	/* indexc() returns the position of a character */
-	variable1 = input(substr(c_variable1, 1, indexc(c_variable1, ',"')-1), best.);
-	variable2 = input(substr(c_variable2, 1, indexc(c_variable2, ',"')-1), best.);
-	variable3 = strip(substr(c_variable3, 1, indexc(c_variable3, ',"')-1));
 	format variable1 10.2;
 	format variable2 2.;
-	/* drop original variable read from JSON */
-	drop c_:;
+	length variable1 variable2 8 variable3 $6;
+	set j.rows (drop=ordinal_:);
 run;
 
 * deassign fileref json;
 filename json; 
+
+* deassign library reference j;
+libname j;
 
 *** text *********************************************************************;
 
@@ -242,12 +219,3 @@ data tbd;
 	count + 1;
 	keep tweet_id term_id count;
 run;
-
-
-
-
-
-
-
-
-
