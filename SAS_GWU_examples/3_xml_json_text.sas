@@ -105,7 +105,7 @@ data scratch2;
 	format variable1 10.2;
 	format variable2 2.;
 	length variable1 variable2 8 variable3 $6;
-	set j.rows (drop=ordinal_:);
+	set j.row (drop=ordinal_:);
 run;
 
 * deassign fileref json;
@@ -124,7 +124,7 @@ filename txt "&git_repo_dir.&dsep.example.txt";
 * create scratch3 set;
 data scratch3;
 	length line $140.;          /* tweets are 140 characters */
-	infile txt delimiter='0a'x; /* hex character for line return */
+	infile txt delimiter='0a'x; /* hex character for line return; ascii table-Hex 16 */
 	informat line $140.;
 	input line $;
 run;
@@ -142,9 +142,9 @@ data scratch3;
 	/* use regular expression to remove urls */
 	/* remove non-alphabetical characters */
 
-	regex = prxparse('s/http.*( |)/ /');
-	length line $140.;
-	infile txt dlm='0a'x;
+	regex = prxparse('s/http.*( |)/ /'); /* anything followed by http replace it with a blank */
+	length line $140.; 
+	infile txt dlm='0a'x; 
 	informat line $140.;
 	input line $;
 	line = lowcase(line);
@@ -170,7 +170,7 @@ data scratch4;
 	/* remove short terms that are usually not informative */
 	
 	set scratch3;
-	retain tweet_id 1;
+	retain tweet_id 1; /* retain to count */
 	n_terms = countw(line);
 	do i=1 to n_terms;
 		term = scan(line, i);
